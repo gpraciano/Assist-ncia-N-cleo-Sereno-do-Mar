@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Vegetal } from '../types';
-import { X } from 'lucide-react';
+import { X, Trash2 } from 'lucide-react';
 import Button from './Button';
 
 interface StockDetailModalProps {
@@ -10,6 +10,7 @@ interface StockDetailModalProps {
     onClose: () => void;
     onViewMovementHistory: (item: Vegetal) => void;
     onEdit: (item: Vegetal) => void;
+    onDelete: (itemId: string) => void;
 }
 
 const DetailItem: React.FC<{ label: string; value?: string | number | null }> = ({ label, value }) => (
@@ -19,7 +20,14 @@ const DetailItem: React.FC<{ label: string; value?: string | number | null }> = 
     </div>
 );
 
-const StockDetailModal: React.FC<StockDetailModalProps> = ({ item, initialQuantity, onClose, onViewMovementHistory, onEdit }) => {
+const StockDetailModal: React.FC<StockDetailModalProps> = ({ item, initialQuantity, onClose, onViewMovementHistory, onEdit, onDelete }) => {
+    
+    const handleDelete = () => {
+        if (window.confirm('Tem certeza que deseja excluir este item de estoque? Esta ação não pode ser desfeita e removerá o histórico de movimentações.')) {
+            onDelete(item.id);
+        }
+    };
+
     return (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
             <div className="bg-gray-800 rounded-xl shadow-2xl w-full max-w-2xl border border-gray-600 relative">
@@ -59,9 +67,16 @@ const StockDetailModal: React.FC<StockDetailModalProps> = ({ item, initialQuanti
                     </section>
                 </div>
 
-                <div className="px-6 py-4 bg-gray-900/50 flex justify-end gap-4 rounded-b-xl border-t border-gray-700">
-                    <Button variant="secondary" onClick={() => onEdit(item)}>Editar</Button>
-                    <Button onClick={() => onViewMovementHistory(item)}>Ver Histórico de Movimentação</Button>
+                <div className="px-6 py-4 bg-gray-900/50 flex justify-between items-center gap-4 rounded-b-xl border-t border-gray-700">
+                    <div>
+                        <Button variant="danger" onClick={handleDelete} className="p-2" title="Deletar Item">
+                            <Trash2 size={18} />
+                        </Button>
+                    </div>
+                    <div className="flex gap-4">
+                        <Button variant="secondary" onClick={() => onEdit(item)}>Editar</Button>
+                        <Button onClick={() => onViewMovementHistory(item)}>Ver Histórico de Movimentação</Button>
+                    </div>
                 </div>
             </div>
         </div>

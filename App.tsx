@@ -1,6 +1,4 @@
 
-
-
 import React, { useState, useCallback, useMemo } from 'react';
 import { Session, Vegetal, StockMovementType, SessionType, StockMovement, Consumption } from './types';
 import SessionForm from './components/SessionForm';
@@ -12,7 +10,8 @@ import StockDetailModal from './components/StockDetailModal';
 import FullHistoryModal from './components/FullHistoryModal';
 import StockMovementHistoryModal from './components/StockMovementHistoryModal';
 import SociosListModal from './components/SociosListModal';
-import { Leaf, PlusCircle, Archive, LayoutDashboard, History, Menu } from 'lucide-react';
+import LoginScreen from './components/LoginScreen';
+import { Leaf, PlusCircle, Archive, LayoutDashboard, History, Menu, LogOut, User as UserIcon } from 'lucide-react';
 
 interface NavButtonProps {
     active: boolean;
@@ -220,6 +219,9 @@ const processInitialData = () => {
 const { initialProcessedStock, initialHistoricalStock, initialProcessedMovements, initialProcessedSessions } = processInitialData();
 
 const App: React.FC = () => {
+    // Authentication State
+    const [currentUser, setCurrentUser] = useState<string | null>(null);
+
     const [view, setView] = useState<'dashboard' | 'form' | 'stock' | 'history'>('dashboard');
     const [sessions, setSessions] = useState<Session[]>(initialProcessedSessions);
     const [stock, setStock] = useState<Vegetal[]>(initialProcessedStock);
@@ -235,6 +237,25 @@ const App: React.FC = () => {
     const [fullHistoryRole, setFullHistoryRole] = useState<keyof Pick<Session, 'dirigente' | 'explanator' | 'reader'> | null>(null);
     const [viewingStockMovement, setViewingStockMovement] = useState<Vegetal | null>(null);
     const [isSociosModalOpen, setIsSociosModalOpen] = useState(false);
+
+    const handleLogin = (username: string, password: string): boolean => {
+        // Login Logic: Check specific credentials
+        if (username === 'Mestre' && password === 'Mestre') {
+            setCurrentUser('Mestre');
+            return true;
+        }
+        if (username === 'Auxiliar' && password === 'Auxiliar') {
+            setCurrentUser('Auxiliar');
+            return true;
+        }
+        return false;
+    };
+
+    const handleLogout = () => {
+        setCurrentUser(null);
+        setView('dashboard');
+        setIsMenuOpen(false);
+    };
 
     const socios = useMemo(() => {
         // Defensive coding: ensure inputs are arrays before processing
@@ -656,6 +677,13 @@ const App: React.FC = () => {
         setEditingStockItem(null);
     };
 
+    const handleDeleteStockItem = (itemId: string) => {
+        setStock(prev => prev.filter(item => item.id !== itemId));
+        setHistoricalStockData(prev => prev.filter(item => item.id !== itemId));
+        setStockMovements(prev => prev.filter(m => m.vegetalId !== itemId));
+        setViewingStockItem(null);
+    };
+
 
     const renderContent = () => {
         switch (view) {
@@ -685,6 +713,10 @@ const App: React.FC = () => {
         }
     };
 
+    if (!currentUser) {
+        return <LoginScreen onLogin={handleLogin} />;
+    }
+
     return (
         <div className="min-h-screen bg-gray-900 text-white font-sans">
             <header className="bg-gray-800/50 backdrop-blur-sm border-b border-gray-700 sticky top-0 z-40">
@@ -693,7 +725,11 @@ const App: React.FC = () => {
                         <Leaf className="text-sky-400" size={28}/>
                         <h1 className="text-xl font-bold text-white hidden sm:block">Registro de Sessões</h1>
                     </div>
-                    <div className="relative">
+                    <div className="relative flex items-center gap-4">
+                        <div className="hidden md:flex items-center gap-2 text-sm text-gray-400 bg-gray-800 px-3 py-1.5 rounded-full border border-gray-700">
+                            <UserIcon size={14} />
+                            <span>{currentUser}</span>
+                        </div>
                          <button
                             onClick={() => setIsMenuOpen(!isMenuOpen)}
                             className="p-2 rounded-md text-gray-300 hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-sky-500"
@@ -703,8 +739,13 @@ const App: React.FC = () => {
                         </button>
                         {isMenuOpen && (
                              <div 
-                                className="absolute right-0 mt-2 w-64 bg-gray-800 border border-gray-700 rounded-md shadow-lg z-50 origin-top-right"
+                                className="absolute right-0 top-full mt-2 w-64 bg-gray-800 border border-gray-700 rounded-md shadow-lg z-50 origin-top-right"
                              >
+                                <div className="p-3 border-b border-gray-700 md:hidden">
+                                    <p className="text-sm text-gray-400 flex items-center gap-2">
+                                        <UserIcon size={14} /> {currentUser}
+                                    </p>
+                                </div>
                                 <div className="p-2 flex flex-col gap-1">
                                     <NavButton 
                                         active={view === 'dashboard'} 
@@ -734,6 +775,16 @@ const App: React.FC = () => {
                                     >
                                         Histórico de Sessões
                                     </NavButton>
+                                    
+                                    <div className="my-1 border-t border-gray-700"></div>
+                                    
+                                    <button
+                                        onClick={handleLogout}
+                                        className="w-full flex items-center gap-3 px-4 py-2 text-sm text-left font-medium rounded-md text-red-400 hover:bg-gray-700 hover:text-red-300 transition-colors"
+                                    >
+                                        <LogOut size={16} />
+                                        Sair
+                                    </button>
                                 </div>
                             </div>
                         )}
@@ -753,6 +804,7 @@ const App: React.FC = () => {
                     onClose={() => setViewingStockItem(null)} 
                     onViewMovementHistory={setViewingStockMovement}
                     onEdit={handleStartEditStockItem}
+                    onDelete={handleDeleteStockItem}
                 />
             )}
             {fullHistoryRole && (
