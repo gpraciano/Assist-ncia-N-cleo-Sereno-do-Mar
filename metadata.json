@@ -1,0 +1,5 @@
+{
+  "name": "Registro de Sessões e Sala do Vegetal",
+  "description": "Um aplicativo para gerenciar sessões, participantes, consumo de Vegetal e controlar o estoque na Sala do Vegetal.",
+  "requestFramePermissions": []
+}
