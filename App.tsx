@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback, useMemo } from 'react';
-import { Session, Vegetal, StockMovementType, SessionType, StockMovement, Consumption } from './types';
+import { Session, Vegetal, StockMovementType, SessionType, StockMovement, Consumption, ConsumedVegetal } from './types';
 import SessionForm from './components/SessionForm';
 import StockManager from './components/StockManager';
 import Dashboard from './components/Dashboard';
@@ -33,111 +33,9 @@ const NavButton: React.FC<NavButtonProps> = ({ active, onClick, icon, children }
     </button>
 );
 
-const initialStockData: Vegetal[] = [
-  { id: 'v1', name: 'Preparo 2023-01-10', quantity: 10, envaseDate: '2023-01-10', master: 'Mestre Gabriel', auxiliary: 'Auxiliar João', messenger: 'Mensageiro Paulo', chacronaResp: 'Responsável Maria', batidaoResp: 'Responsável Pedro', maririSpecies: 'Caupuri', chacronaSpecies: 'Folha Larga' },
-  { id: 'v2', name: 'Preparo 2023-02-20', quantity: 10, envaseDate: '2023-02-20', master: 'Mestre Miguel', auxiliary: 'Auxiliar Tiago', messenger: 'Mensageiro André', chacronaResp: 'Responsável Ana', batidaoResp: 'Responsável Carlos', maririSpecies: 'Tucunacá', chacronaSpecies: 'Folha Fina' },
-  { id: 'v3', name: 'Preparo 2023-03-05', quantity: 10, envaseDate: '2023-03-05', master: 'Mestre Rafael', auxiliary: 'Auxiliar Lucas', messenger: 'Mensageiro Carlos', chacronaResp: 'Responsável Joana', batidaoResp: 'Responsável Marcos', maririSpecies: 'Boliviano', chacronaSpecies: 'Cabocla' },
-  { id: 'v4', name: 'Preparo 2023-04-15', quantity: 10, envaseDate: '2023-04-15', master: 'Mestre José', auxiliary: 'Auxiliar Felipe', messenger: 'Mensageiro Paulo', chacronaResp: 'Responsável Maria', batidaoResp: 'Responsável Pedro', maririSpecies: 'Caupuri', chacronaSpecies: 'Folha Fina' },
-  { id: 'v5', name: 'Preparo 2023-05-25', quantity: 10, envaseDate: '2023-05-25', master: 'Mestre Joaquim', auxiliary: 'Auxiliar Marcos', messenger: 'Mensageiro André', chacronaResp: 'Responsável Ana', batidaoResp: 'Responsável Carlos', maririSpecies: 'Tucunacá', chacronaSpecies: 'Folha Larga' },
-  { id: 'v6', name: 'Preparo 2024-06-12', quantity: 10, envaseDate: '2024-06-12', master: 'Mestre Gabriel', auxiliary: 'Auxiliar João', messenger: 'Mensageiro Carlos', chacronaResp: 'Responsável Joana', batidaoResp: 'Responsável Marcos', maririSpecies: 'Boliviano', chacronaSpecies: 'Cabocla' },
-  { id: 'v7', name: 'Preparo 2024-07-01', quantity: 10, envaseDate: '2024-07-01', master: 'Mestre Miguel', auxiliary: 'Auxiliar Tiago', messenger: 'Mensageiro Paulo', chacronaResp: 'Responsável Maria', batidaoResp: 'Responsável Pedro', maririSpecies: 'Caupuri', chacronaSpecies: 'Folha Fina' },
-  { id: 'v8', name: 'Preparo 2024-08-18', quantity: 10, envaseDate: '2024-08-18', master: 'Mestre Rafael', auxiliary: 'Auxiliar Lucas', messenger: 'Mensageiro André', chacronaResp: 'Responsável Ana', batidaoResp: 'Responsável Carlos', maririSpecies: 'Tucunacá', chacronaSpecies: 'Folha Larga' },
-  { id: 'v9', name: 'Preparo 2024-09-30', quantity: 10, envaseDate: '2024-09-30', master: 'Mestre José', auxiliary: 'Auxiliar Felipe', messenger: 'Mensageiro Carlos', chacronaResp: 'Responsável Joana', batidaoResp: 'Responsável Marcos', maririSpecies: 'Boliviano', chacronaSpecies: 'Cabocla' },
-  { id: 'v10', name: 'Preparo 2024-10-15', quantity: 10, envaseDate: '2024-10-15', master: 'Mestre Joaquim', auxiliary: 'Auxiliar Marcos', messenger: 'Mensageiro Paulo', chacronaResp: 'Responsável Maria', batidaoResp: 'Responsável Pedro', maririSpecies: 'Caupuri', chacronaSpecies: 'Folha Fina' }
-];
+const initialStockData: Vegetal[] = [];
 
-const initialSessions: Omit<Session, 'id'>[] = [
-    {
-      date: '2024-10-20',
-      type: SessionType.PRIMEIRA_ESCALA,
-      dirigente: 'Mestre Gabriel',
-      explanator: 'Mestre Miguel',
-      reader: 'Mestre Rafael',
-      assistantMaster: 'Mestre José',
-      chamadas: 'Chamada 1, Chamada 2',
-      stories: 'História A',
-      hasPhotoRecording: true,
-      hasAudioRecording: false,
-      participants: { mestres: 5, conselho: 3, corpoInstrutivo: 10, quadroDeSocios: 20, visitantes: 2, jovens: 4 },
-      consumption: {
-        isUnited: false,
-        vegetals: [{ vegetalId: 'v1', disponibilizada: 2 }],
-        totalConsumed: 1.8,
-      },
-    },
-    {
-      date: '2024-10-27',
-      type: SessionType.SEGUNDA_ESCALA,
-      dirigente: 'Mestre Joaquim',
-      explanator: 'Mestre Gabriel',
-      reader: 'Mestre Miguel',
-      assistantMaster: 'Mestre Rafael',
-      chamadas: 'Chamada 3',
-      stories: '',
-      hasPhotoRecording: false,
-      hasAudioRecording: true,
-      participants: { mestres: 6, conselho: 4, corpoInstrutivo: 12, quadroDeSocios: 25, visitantes: 5, jovens: 3 },
-      consumption: {
-        isUnited: true,
-        vegetals: [{ vegetalId: 'v2', disponibilizada: 1.5 }, { vegetalId: 'v3', disponibilizada: 1.5 }],
-        totalConsumed: 2.5,
-      },
-    },
-    {
-      date: '2024-11-03',
-      type: SessionType.PRIMEIRA_ESCALA,
-      dirigente: 'Mestre José',
-      explanator: 'Mestre Joaquim',
-      reader: 'Mestre Gabriel',
-      assistantMaster: 'Mestre Miguel',
-      chamadas: 'Chamada 4, Chamada 5, Chamada 6',
-      stories: 'História B',
-      hasPhotoRecording: true,
-      hasAudioRecording: true,
-      participants: { mestres: 4, conselho: 2, corpoInstrutivo: 8, quadroDeSocios: 18, visitantes: 1, jovens: 2 },
-      consumption: {
-        isUnited: false,
-        vegetals: [{ vegetalId: 'v4', disponibilizada: 1.8 }],
-        totalConsumed: 1.7,
-      },
-    },
-    {
-      date: '2024-11-10',
-      type: SessionType.INSTRUTIVA,
-      dirigente: 'Mestre Rafael',
-      explanator: 'Mestre José',
-      reader: 'Mestre Joaquim',
-      assistantMaster: 'Mestre Gabriel',
-      chamadas: 'Chamada 7',
-      stories: 'História C',
-      hasPhotoRecording: false,
-      hasAudioRecording: false,
-      participants: { mestres: 7, conselho: 5, corpoInstrutivo: 15, quadroDeSocios: 30, visitantes: 8, jovens: 6 },
-      consumption: {
-        isUnited: true,
-        vegetals: [{ vegetalId: 'v5', disponibilizada: 2.0 }, { vegetalId: 'v6', disponibilizada: 2.0 }],
-        totalConsumed: 3.5,
-      },
-    },
-    {
-      date: '2024-11-17',
-      type: SessionType.PRIMEIRA_ESCALA,
-      dirigente: 'Mestre Miguel',
-      explanator: 'Mestre Rafael',
-      reader: 'Mestre José',
-      assistantMaster: 'Mestre Joaquim',
-      chamadas: 'Chamada 8, Chamada 9',
-      stories: '',
-      hasPhotoRecording: false,
-      hasAudioRecording: true,
-      participants: { mestres: 5, conselho: 3, corpoInstrutivo: 11, quadroDeSocios: 22, visitantes: 3, jovens: 5 },
-      consumption: {
-        isUnited: false,
-        vegetals: [{ vegetalId: 'v7', disponibilizada: 2.2 }],
-        totalConsumed: 2.0,
-      },
-    },
-];
+const initialSessions: Omit<Session, 'id'>[] = [];
 
 // This function processes the initial data to ensure consistency between sessions, stock, and movements.
 const processInitialData = () => {
@@ -532,10 +430,135 @@ const App: React.FC = () => {
     }, [stock]);
 
     const handleImport = (file: File) => {
-        // This is a placeholder for the actual import logic.
-        // In a real application, you would use a library like 'xlsx' or 'papaparse'
-        // to read the file content and then update the state.
-        alert(`Arquivo "${file.name}" selecionado. A funcionalidade de importação será implementada futuramente.`);
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const text = e.target?.result as string;
+            if (!text) return;
+
+            // Simple CSV parser handling quoted fields
+            const rows: string[][] = [];
+            let currentRow: string[] = [];
+            let currentField = '';
+            let inQuotes = false;
+
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                const nextChar = text[i + 1];
+
+                if (inQuotes) {
+                    if (char === '"' && nextChar === '"') {
+                        currentField += '"';
+                        i++; // skip next quote
+                    } else if (char === '"') {
+                        inQuotes = false;
+                    } else {
+                        currentField += char;
+                    }
+                } else {
+                    if (char === '"') {
+                        inQuotes = true;
+                    } else if (char === ',') {
+                        currentRow.push(currentField);
+                        currentField = '';
+                    } else if (char === '\n' || char === '\r') {
+                        if (currentField || currentRow.length > 0) {
+                            currentRow.push(currentField);
+                            rows.push(currentRow);
+                        }
+                        currentField = '';
+                        currentRow = [];
+                        if (char === '\r' && nextChar === '\n') i++;
+                    } else {
+                        currentField += char;
+                    }
+                }
+            }
+            if (currentField || currentRow.length > 0) {
+                currentRow.push(currentField);
+                rows.push(currentRow);
+            }
+
+            // Remove header
+            const dataRows = rows.slice(1);
+            
+            const newSessions: Session[] = [];
+            const newHistoricalStock: Vegetal[] = [...historicalStockData];
+
+            dataRows.forEach(row => {
+                if (row.length < 20) return; // Basic validation
+
+                // Helper to find or create vegetal by name
+                const findOrCreateVegetal = (name: string): string => {
+                    const cleanName = name.trim();
+                    const existing = newHistoricalStock.find(v => v.name === cleanName);
+                    if (existing) return existing.id;
+
+                    const newId = `v-imported-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                    newHistoricalStock.push({
+                        id: newId,
+                        name: cleanName,
+                        quantity: 0, // Imported historical item, unknown quantity
+                    });
+                    return newId;
+                };
+
+                // Parse Date (DD/MM/YYYY -> ISO)
+                const dateParts = row[1].split('/');
+                let isoDate = row[1];
+                if (dateParts.length === 3) {
+                    isoDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+                }
+
+                // Parse Vegetals
+                const vegetalNames = row[19] ? row[19].split(';').filter(s => s.trim()) : [];
+                const vegetalQuantities = row[20] ? row[20].split(';').map(s => parseFloat(s.replace(',', '.')) || 0) : [];
+                
+                const consumedVegetals: ConsumedVegetal[] = vegetalNames.map((name, index) => ({
+                    vegetalId: findOrCreateVegetal(name),
+                    disponibilizada: vegetalQuantities[index] || 0
+                }));
+
+                const session: Session = {
+                    id: row[0] || `s-imported-${Date.now()}-${Math.random()}`,
+                    date: isoDate,
+                    type: row[2] as SessionType,
+                    dirigente: row[3],
+                    explanator: row[4],
+                    reader: row[5],
+                    assistantMaster: row[6],
+                    chamadas: row[7],
+                    stories: row[8],
+                    hasPhotoRecording: row[9] === 'Sim',
+                    hasAudioRecording: row[10] === 'Sim',
+                    participants: {
+                        mestres: parseInt(row[11]) || 0,
+                        conselho: parseInt(row[12]) || 0,
+                        corpoInstrutivo: parseInt(row[13]) || 0,
+                        quadroDeSocios: parseInt(row[14]) || 0,
+                        visitantes: parseInt(row[15]) || 0,
+                        jovens: parseInt(row[16]) || 0,
+                    },
+                    consumption: {
+                        isUnited: row[18] === 'Sim',
+                        vegetals: consumedVegetals,
+                        totalConsumed: parseFloat(row[21].replace(',', '.')) || 0
+                    }
+                };
+                newSessions.push(session);
+            });
+
+            setHistoricalStockData(newHistoricalStock);
+            
+            // Merge sessions, avoiding duplicates by ID
+            setSessions(prev => {
+                const existingIds = new Set(prev.map(s => s.id));
+                const uniqueNewSessions = newSessions.filter(s => !existingIds.has(s.id));
+                return [...prev, ...uniqueNewSessions];
+            });
+
+            alert(`${newSessions.length} sessões importadas com sucesso!`);
+        };
+        reader.readAsText(file);
     };
     
     const handleExport = (sessionsToExport: Session[]) => {

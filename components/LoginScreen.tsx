@@ -37,7 +37,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
                         <div className="relative">
-                            <User className="absolute left-3 top-[38px] text-gray-500" size={18} />
+                            <User className="absolute left-3 top-[42px] text-gray-500" size={20} />
                             <Input 
                                 label="Nome de Usuário" 
                                 id="username" 
@@ -45,8 +45,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                                 value={username} 
                                 onChange={(e) => setUsername(e.target.value)} 
                                 containerClassName="w-full"
-                                className="pl-10"
-                                placeholder="Ex: Mestre"
+                                className="pl-10 py-3.5"
                                 required
                             />
                         </div>
@@ -54,7 +53,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                     
                     <div>
                          <div className="relative">
-                            <Lock className="absolute left-3 top-[38px] text-gray-500" size={18} />
+                            <Lock className="absolute left-3 top-[42px] text-gray-500" size={20} />
                             <Input 
                                 label="Senha" 
                                 id="password" 
@@ -62,8 +61,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                                 value={password} 
                                 onChange={(e) => setPassword(e.target.value)} 
                                 containerClassName="w-full"
-                                className="pl-10"
-                                placeholder="••••••••"
+                                className="pl-10 py-3.5"
                                 required
                             />
                         </div>
