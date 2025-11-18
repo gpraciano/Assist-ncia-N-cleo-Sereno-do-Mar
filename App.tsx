@@ -3,6 +3,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { Session, Vegetal, StockMovementType, SessionType, StockMovement, Consumption, ConsumedVegetal } from './types';
 import SessionForm from './components/SessionForm';
 import StockManager from './components/StockManager';
+import StockEntryForm from './components/StockEntryForm';
 import Dashboard from './components/Dashboard';
 import SessionHistory from './components/SessionHistory';
 import SessionDetailModal from './components/SessionDetailModal';
@@ -120,7 +121,7 @@ const App: React.FC = () => {
     // Authentication State
     const [currentUser, setCurrentUser] = useState<string | null>(null);
 
-    const [view, setView] = useState<'dashboard' | 'form' | 'stock' | 'history'>('dashboard');
+    const [view, setView] = useState<'dashboard' | 'form' | 'stock' | 'stock-entry' | 'history'>('dashboard');
     const [sessions, setSessions] = useState<Session[]>(initialProcessedSessions);
     const [stock, setStock] = useState<Vegetal[]>(initialProcessedStock);
     const [historicalStockData, setHistoricalStockData] = useState<Vegetal[]>(initialHistoricalStock);
@@ -391,18 +392,7 @@ const App: React.FC = () => {
     }, [stock, sessions, stockMovements, historicalStock]);
 
     const handleStockMovement = useCallback(({ type, item, quantity }: { type: StockMovementType, item: Partial<Vegetal> & { id?: string }, quantity: number }) => {
-        if (type === StockMovementType.ENTRADA) {
-            const newItem: Vegetal = {
-                id: `v${Date.now()}`,
-                name: item.name || 'Sem nome',
-                quantity: quantity,
-                ...item
-            };
-            setStock(prev => [...prev, newItem]);
-            setHistoricalStockData(prev => [...prev, newItem]);
-            const newMovement: StockMovement = { id: `mov-${newItem.id}`, vegetalId: newItem.id, vegetalName: newItem.name, type: 'Entrada', quantity: quantity, date: new Date().toISOString() };
-            setStockMovements(prev => [...prev, newMovement]);
-        } else if (item.id) {
+        if (item.id) {
             const stockItem = stock.find(s => s.id === item.id);
             if (stockItem) {
                 let newMovement: StockMovement | null = null;
@@ -428,6 +418,48 @@ const App: React.FC = () => {
             }
         }
     }, [stock]);
+
+    const handleSaveStockEntryForm = (item: Partial<Vegetal> & { id?: string }, quantity: number) => {
+        if (item.id) {
+            // Update Existing Item
+            const updatedItem: Vegetal = {
+                ...(stock.find(s => s.id === item.id) || {} as Vegetal),
+                ...item,
+                quantity: quantity, // Update quantity directly here, assume user knows what they are doing in "Edit" mode
+            } as Vegetal;
+
+            if (editingStockItem && editingStockItem.name !== updatedItem.name) {
+                 setStockMovements(prevMovements =>
+                    prevMovements.map(mov =>
+                        mov.vegetalId === updatedItem.id ? { ...mov, vegetalName: updatedItem.name } : mov
+                    )
+                );
+            }
+
+            setStock(prevStock => 
+                prevStock.map(s => (s.id === updatedItem.id ? updatedItem : s))
+            );
+            setHistoricalStockData(prev => 
+                prev.map(s => (s.id === updatedItem.id ? updatedItem : s))
+            );
+            
+        } else {
+            // Create New Item
+            const newItem: Vegetal = {
+                id: `v${Date.now()}`,
+                name: item.name || 'Sem nome',
+                quantity: quantity,
+                ...item
+            } as Vegetal;
+            
+            setStock(prev => [...prev, newItem]);
+            setHistoricalStockData(prev => [...prev, newItem]);
+            const newMovement: StockMovement = { id: `mov-${newItem.id}`, vegetalId: newItem.id, vegetalName: newItem.name, type: 'Entrada', quantity: quantity, date: new Date().toISOString() };
+            setStockMovements(prev => [...prev, newMovement]);
+        }
+        setEditingStockItem(null);
+        setView('stock');
+    };
 
     const handleImport = (file: File) => {
         const reader = new FileReader();
@@ -674,30 +706,12 @@ const App: React.FC = () => {
     const handleStartEditStockItem = (item: Vegetal) => {
         setViewingStockItem(null);
         setEditingStockItem(item);
-        setView('stock');
-    };
-
-    const handleUpdateStockItem = (updatedItem: Vegetal) => {
-        // The item being edited is in `editingStockItem` state
-        if (editingStockItem && editingStockItem.name !== updatedItem.name) {
-            setStockMovements(prevMovements =>
-                prevMovements.map(mov =>
-                    mov.vegetalId === updatedItem.id ? { ...mov, vegetalName: updatedItem.name } : mov
-                )
-            );
-        }
-    
-        setStock(prevStock => 
-            prevStock.map(item => (item.id === updatedItem.id ? updatedItem : item))
-        );
-        setHistoricalStockData(prev => 
-            prev.map(item => (item.id === updatedItem.id ? updatedItem : item))
-        );
-        setEditingStockItem(null);
+        setView('stock-entry');
     };
 
     const handleCancelEditStockItem = () => {
         setEditingStockItem(null);
+        setView('stock');
     };
 
     const handleDeleteStockItem = (itemId: string) => {
@@ -725,9 +739,14 @@ const App: React.FC = () => {
                             stock={stock} 
                             onStockMovement={handleStockMovement} 
                             onViewStockItem={setViewingStockItem}
-                            itemToEdit={editingStockItem}
-                            onUpdateStockItem={handleUpdateStockItem}
-                            onCancelEdit={handleCancelEditStockItem}
+                            onCreateStockItem={() => { setEditingStockItem(null); setView('stock-entry'); }}
+                            onStartEditItem={handleStartEditStockItem}
+                        />;
+            case 'stock-entry':
+                return <StockEntryForm 
+                            initialData={editingStockItem} 
+                            onSave={handleSaveStockEntryForm} 
+                            onCancel={handleCancelEditStockItem}
                         />;
             case 'history':
                 return <SessionHistory sessions={sessions} onViewSession={setViewingSession} historicalStock={historicalStock} onImport={handleImport} onExport={handleExport} onOpenSociosModal={() => setIsSociosModalOpen(true)} />;
@@ -778,7 +797,7 @@ const App: React.FC = () => {
                                         Tela Inicial
                                     </NavButton>
                                     <NavButton 
-                                        active={view === 'stock'} 
+                                        active={view === 'stock' || view === 'stock-entry'} 
                                         onClick={() => { setView('stock'); setIsMenuOpen(false); }} 
                                         icon={<Archive size={16}/>}
                                     >

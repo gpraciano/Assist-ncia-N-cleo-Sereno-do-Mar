@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Vegetal, StockMovementType } from '../types';
 import Card from './Card';
 import Button from './Button';
@@ -11,26 +11,15 @@ interface StockManagerProps {
     stock: Vegetal[];
     onStockMovement: (movement: { type: StockMovementType, item: Partial<Vegetal> & { id?: string }, quantity: number }) => void;
     onViewStockItem: (item: Vegetal) => void;
-    itemToEdit: Vegetal | null;
-    onUpdateStockItem: (item: Vegetal) => void;
-    onCancelEdit: () => void;
+    onCreateStockItem: () => void;
+    onStartEditItem: (item: Vegetal) => void;
 }
 
-const StockManager: React.FC<StockManagerProps> = ({ stock, onStockMovement, onViewStockItem, itemToEdit, onUpdateStockItem, onCancelEdit }) => {
+const StockManager: React.FC<StockManagerProps> = ({ stock, onStockMovement, onViewStockItem, onCreateStockItem, onStartEditItem }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [modalType, setModalType] = useState<StockMovementType | 'edit' | null>(null);
+    const [modalType, setModalType] = useState<StockMovementType | null>(null);
     const [currentItem, setCurrentItem] = useState<Partial<Vegetal>>({});
     const [quantity, setQuantity] = useState(0);
-
-    useEffect(() => {
-        if (itemToEdit) {
-            setModalType('edit');
-            setCurrentItem(itemToEdit);
-            setQuantity(itemToEdit.quantity);
-            setIsModalOpen(true);
-        }
-    }, [itemToEdit]);
-
 
     const openModal = (type: StockMovementType, item: Partial<Vegetal> = {}) => {
         setModalType(type);
@@ -40,9 +29,6 @@ const StockManager: React.FC<StockManagerProps> = ({ stock, onStockMovement, onV
     };
 
     const closeModal = () => {
-        if (modalType === 'edit') {
-            onCancelEdit();
-        }
         setIsModalOpen(false);
         setModalType(null);
         setCurrentItem({});
@@ -51,22 +37,10 @@ const StockManager: React.FC<StockManagerProps> = ({ stock, onStockMovement, onV
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (modalType === 'edit' && currentItem.id) {
-            const updatedItem: Vegetal = {
-                ...(itemToEdit as Vegetal),
-                ...currentItem,
-                quantity,
-            };
-            onUpdateStockItem(updatedItem);
-
-        } else if (modalType && modalType !== 'edit') {
+        if (modalType) {
             onStockMovement({ type: modalType, item: currentItem, quantity });
         }
         closeModal();
-    };
-    
-    const handleItemChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setCurrentItem(prev => ({ ...prev, [e.target.name]: e.target.value }));
     };
     
     const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -78,29 +52,6 @@ const StockManager: React.FC<StockManagerProps> = ({ stock, onStockMovement, onV
     const renderModalContent = () => {
         if (!modalType) return null;
         
-        if (modalType === StockMovementType.ENTRADA || modalType === 'edit') {
-            const title = modalType === 'edit' ? 'Editar Item de Estoque' : 'Registrar Entrada';
-            const quantityLabel = modalType === 'edit' ? 'Quantidade Atual (litros)' : 'Quantidade Envasada (litros)';
-
-            return (
-                <div className="space-y-4">
-                    <h3 className="text-xl font-bold text-sky-400">{title}</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Input label="Nome/Identificação do Preparo" name="name" value={currentItem.name || ''} onChange={handleItemChange} required />
-                        <Input label={quantityLabel} type="number" step="0.001" value={quantity} onChange={handleQuantityChange} min="0" required />
-                        <Input label="Data do Envase" type="date" name="envaseDate" value={currentItem.envaseDate || ''} onChange={handleItemChange} />
-                        <Input label="Mestre do Preparo" name="master" value={currentItem.master || ''} onChange={handleItemChange} />
-                        <Input label="Auxiliar do Preparo" name="auxiliary" value={currentItem.auxiliary || ''} onChange={handleItemChange} />
-                        <Input label="Mensageiro" name="messenger" value={currentItem.messenger || ''} onChange={handleItemChange} />
-                        <Input label="Responsável pela Chacrona" name="chacronaResp" value={currentItem.chacronaResp || ''} onChange={handleItemChange} />
-                        <Input label="Responsável pela Batição" name="batidaoResp" value={currentItem.batidaoResp || ''} onChange={handleItemChange} />
-                        <Input label="Espécie do Mariri" name="maririSpecies" value={currentItem.maririSpecies || ''} onChange={handleItemChange} />
-                        <Input label="Espécie da Chacrona" name="chacronaSpecies" value={currentItem.chacronaSpecies || ''} onChange={handleItemChange} />
-                    </div>
-                </div>
-            );
-        }
-
         return (
             <div className="space-y-4">
                  <h3 className="text-xl font-bold text-sky-400">Registrar {modalType}</h3>
@@ -116,7 +67,7 @@ const StockManager: React.FC<StockManagerProps> = ({ stock, onStockMovement, onV
     return (
         <Card title="Sala do Vegetal - Estoque Atual">
              <div className="mb-6 flex justify-end gap-4">
-                <Button onClick={() => openModal(StockMovementType.ENTRADA)} className="flex items-center gap-2"><Plus size={16}/> Entrada</Button>
+                <Button onClick={onCreateStockItem} className="flex items-center gap-2"><Plus size={16}/> Entrada</Button>
                 <Button onClick={() => openModal(StockMovementType.SAIDA)} variant="secondary" className="flex items-center gap-2"><Minus size={16}/> Saída</Button>
                 <Button onClick={() => openModal(StockMovementType.AJUSTE)} variant="secondary" className="flex items-center gap-2"><Edit3 size={16}/> Ajuste</Button>
             </div>
@@ -146,19 +97,23 @@ const StockManager: React.FC<StockManagerProps> = ({ stock, onStockMovement, onV
 
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
-                     <div className="bg-gray-800 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-600">
-                        <form onSubmit={handleSubmit}>
-                            <div className="p-6">
+                     <div className="bg-gray-800 rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto border border-gray-600 relative flex flex-col">
+                        <div className="p-6 flex-shrink-0 border-b border-gray-700 flex justify-between items-center">
+                             {/* Title is inside renderModalContent for now, could be moved here */}
+                             <span className="text-lg font-bold text-sky-400">Movimentação Rápida</span>
+                             <button onClick={closeModal} className="text-gray-400 hover:text-white transition">
+                                <X size={24}/>
+                            </button>
+                        </div>
+                        <form onSubmit={handleSubmit} className="flex flex-col flex-grow overflow-hidden">
+                            <div className="p-6 overflow-y-auto flex-grow">
                                {renderModalContent()}
                             </div>
-                            <div className="px-6 py-4 bg-gray-900/50 flex justify-end gap-4 rounded-b-xl border-t border-gray-700">
+                            <div className="px-6 py-4 bg-gray-900/50 flex-shrink-0 flex justify-end gap-4 border-t border-gray-700 rounded-b-xl">
                                 <Button type="button" variant="secondary" onClick={closeModal}>Cancelar</Button>
-                                <Button type="submit">{modalType === 'edit' ? 'Atualizar' : 'Salvar'}</Button>
+                                <Button type="submit">Salvar</Button>
                             </div>
                         </form>
-                        <button onClick={closeModal} className="absolute top-4 right-4 text-gray-400 hover:text-white transition">
-                            <X size={24}/>
-                        </button>
                     </div>
                 </div>
             )}
