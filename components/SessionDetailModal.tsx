@@ -1,7 +1,9 @@
 
+
+
 import React from 'react';
 import { Session, Vegetal } from '../types';
-import { X } from 'lucide-react';
+import { X, Trash2 } from 'lucide-react';
 import Button from './Button';
 
 interface SessionDetailModalProps {
@@ -9,6 +11,7 @@ interface SessionDetailModalProps {
     historicalStock: Vegetal[];
     onClose: () => void;
     onEdit: (session: Session) => void;
+    onDelete: (sessionId: string) => void;
 }
 
 const DetailItem: React.FC<{ label: string; value?: string | number | null | boolean }> = ({ label, value }) => {
@@ -21,10 +24,16 @@ const DetailItem: React.FC<{ label: string; value?: string | number | null | boo
     );
 };
 
-const SessionDetailModal: React.FC<SessionDetailModalProps> = ({ session, historicalStock, onClose, onEdit }) => {
+const SessionDetailModal: React.FC<SessionDetailModalProps> = ({ session, historicalStock, onClose, onEdit, onDelete }) => {
     // Fix: Explicitly type the accumulator for `reduce` to ensure type safety.
     const totalParticipants = Object.values(session.participants).reduce<number>((sum, count) => sum + Number(count), 0);
     const getVegetalName = (id: string) => historicalStock.find(v => v.id === id)?.name || 'ID Desconhecido';
+
+    const handleDelete = () => {
+        if (window.confirm('Tem certeza que deseja excluir esta sessão? Esta ação não pode ser desfeita.')) {
+            onDelete(session.id);
+        }
+    };
 
     return (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
@@ -105,9 +114,15 @@ const SessionDetailModal: React.FC<SessionDetailModalProps> = ({ session, histor
                         </div>
                     </section>
                 </div>
-                 <div className="sticky bottom-0 px-6 py-4 bg-gray-900/50 flex justify-end gap-4 rounded-b-xl border-t border-gray-700">
-                    <Button variant="secondary" onClick={onClose}>Fechar</Button>
-                    <Button onClick={() => onEdit(session)}>Editar</Button>
+                 <div className="sticky bottom-0 px-6 py-4 bg-gray-900/50 flex justify-between items-center gap-4 rounded-b-xl border-t border-gray-700">
+                    <div>
+                        <Button variant="danger" onClick={handleDelete} className="p-2" title="Deletar Sessão">
+                            <Trash2 size={18} />
+                        </Button>
+                    </div>
+                    <div className="flex gap-4">
+                        <Button onClick={() => onEdit(session)}>Editar</Button>
+                    </div>
                 </div>
             </div>
         </div>

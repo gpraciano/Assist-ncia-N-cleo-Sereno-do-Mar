@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useCallback, useMemo } from 'react';
 import { Session, Vegetal, StockMovementType, SessionType, StockMovement, Consumption } from './types';
 import SessionForm from './components/SessionForm';
@@ -591,6 +592,41 @@ const App: React.FC = () => {
         setView('history');
     };
 
+    const handleDeleteSession = (sessionId: string) => {
+        const sessionToDelete = sessions.find(s => s.id === sessionId);
+        if (!sessionToDelete) return;
+
+        let tempStock = [...stock];
+        
+        // 1. Revert stock consumption
+        sessionToDelete.consumption.vegetals.forEach(consumed => {
+            const stockIndex = tempStock.findIndex(v => v.id === consumed.vegetalId);
+            if (stockIndex !== -1) {
+                tempStock[stockIndex].quantity += consumed.disponibilizada;
+            } else {
+                // If item was fully consumed and removed from active stock, find it in history and add it back
+                const historicalItem = historicalStock.find(v => v.id === consumed.vegetalId);
+                if (historicalItem) {
+                    tempStock.push({ ...historicalItem, quantity: consumed.disponibilizada });
+                }
+            }
+        });
+
+        // 2. Remove any balance item created by this session
+        const balanceMovement = stockMovements.find(m => m.sessionId === sessionId && m.type === 'Saldo de Sessão');
+        if (balanceMovement) {
+            tempStock = tempStock.filter(v => v.id !== balanceMovement.vegetalId);
+            // Fix: Also remove the balance item from historical data to maintain consistency.
+            setHistoricalStockData(prev => prev.filter(v => v.id !== balanceMovement.vegetalId));
+        }
+
+        // 3. Update states
+        setStock(tempStock);
+        setStockMovements(prev => prev.filter(m => m.sessionId !== sessionId));
+        setSessions(prev => prev.filter(s => s.id !== sessionId));
+        setViewingSession(null); // Close the modal
+    };
+
     const handleStartEditStockItem = (item: Vegetal) => {
         setViewingStockItem(null);
         setEditingStockItem(item);
@@ -708,7 +744,7 @@ const App: React.FC = () => {
                 {renderContent()}
             </main>
              {viewingSession && (
-                <SessionDetailModal session={viewingSession} historicalStock={historicalStock} onClose={() => setViewingSession(null)} onEdit={handleStartEdit} />
+                <SessionDetailModal session={viewingSession} historicalStock={historicalStock} onClose={() => setViewingSession(null)} onEdit={handleStartEdit} onDelete={handleDeleteSession}/>
             )}
             {viewingStockItem && (
                  <StockDetailModal 
